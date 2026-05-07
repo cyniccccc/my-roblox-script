@@ -1,4 +1,4 @@
--- Quest Auto-Accept UI (Draggable, Dropdown, Manual + Auto)
+-- Quest Auto-Accept UI (Draggable, Dropdown, Manual + Auto, Minimize + Delay)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
@@ -10,8 +10,8 @@ screenGui.ResetOnSpawn = false
 
 -- Main Frame (Draggable)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 320, 0, 320)
-mainFrame.Position = UDim2.new(0.5, -160, 0.5, -160)
+mainFrame.Size = UDim2.new(0, 320, 0, 400)  -- a bit taller for delay slider
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 0
@@ -36,7 +36,7 @@ titleCorner.CornerRadius = UDim.new(0, 8)
 titleCorner.Parent = titleBar
 
 local titleText = Instance.new("TextLabel")
-titleText.Size = UDim2.new(1, -50, 1, 0)
+titleText.Size = UDim2.new(1, -90, 1, 0)
 titleText.Position = UDim2.new(0, 10, 0, 0)
 titleText.BackgroundTransparency = 1
 titleText.Text = "Quest Auto-Accept"
@@ -45,6 +45,23 @@ titleText.TextSize = 15
 titleText.TextXAlignment = Enum.TextXAlignment.Left
 titleText.Font = Enum.Font.GothamBold
 titleText.Parent = titleBar
+
+-- Minimize Button
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 30, 1, 0)
+minBtn.Position = UDim2.new(1, -65, 0, 0)
+minBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+minBtn.BackgroundTransparency = 0.2
+minBtn.Text = "−"
+minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minBtn.TextSize = 18
+minBtn.Font = Enum.Font.GothamBold
+minBtn.Parent = titleBar
+minBtn.BorderSizePixel = 0
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 6)
+minCorner.Parent = minBtn
 
 -- Close Button
 local closeBtn = Instance.new("TextButton")
@@ -63,8 +80,15 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 6)
 closeCorner.Parent = closeBtn
 
+-- Container for all content (to be hidden on minimize)
+local contentContainer = Instance.new("Frame")
+contentContainer.Size = UDim2.new(1, 0, 1, -35)
+contentContainer.Position = UDim2.new(0, 0, 0, 35)
+contentContainer.BackgroundTransparency = 1
+contentContainer.Parent = mainFrame
+
 -- Dropdown Section
-local yOffset = 50
+local yOffset = 10
 
 local dropdownLabel = Instance.new("TextLabel")
 dropdownLabel.Size = UDim2.new(1, -20, 0, 25)
@@ -75,10 +99,9 @@ dropdownLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 dropdownLabel.TextSize = 12
 dropdownLabel.Font = Enum.Font.GothamBold
 dropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
-dropdownLabel.Parent = mainFrame
+dropdownLabel.Parent = contentContainer
 yOffset = yOffset + 28
 
--- Dropdown Button
 local dropdownBtn = Instance.new("TextButton")
 dropdownBtn.Size = UDim2.new(1, -20, 0, 35)
 dropdownBtn.Position = UDim2.new(0, 10, 0, yOffset)
@@ -88,7 +111,7 @@ dropdownBtn.Text = "Select Quest"
 dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 dropdownBtn.TextSize = 14
 dropdownBtn.Font = Enum.Font.Gotham
-dropdownBtn.Parent = mainFrame
+dropdownBtn.Parent = contentContainer
 dropdownBtn.BorderSizePixel = 0
 
 local dropdownCorner = Instance.new("UICorner")
@@ -96,7 +119,6 @@ dropdownCorner.CornerRadius = UDim.new(0, 6)
 dropdownCorner.Parent = dropdownBtn
 yOffset = yOffset + 40
 
--- Dropdown Container (hidden by default)
 local dropdownContainer = Instance.new("Frame")
 dropdownContainer.Size = UDim2.new(1, -20, 0, 120)
 dropdownContainer.Position = UDim2.new(0, 10, 0, yOffset)
@@ -104,14 +126,13 @@ dropdownContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 dropdownContainer.BackgroundTransparency = 0.15
 dropdownContainer.BorderSizePixel = 0
 dropdownContainer.Visible = false
-dropdownContainer.Parent = mainFrame
+dropdownContainer.Parent = contentContainer
 dropdownContainer.ClipsDescendants = true
 
 local containerCorner = Instance.new("UICorner")
 containerCorner.CornerRadius = UDim.new(0, 6)
 containerCorner.Parent = dropdownContainer
 
--- Scrolling Frame for quest list
 local dropdownList = Instance.new("ScrollingFrame")
 dropdownList.Size = UDim2.new(1, 0, 1, 0)
 dropdownList.BackgroundTransparency = 1
@@ -125,6 +146,57 @@ listLayout.Parent = dropdownList
 
 yOffset = yOffset + 125
 
+-- Delay Slider Label
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(1, -20, 0, 25)
+delayLabel.Position = UDim2.new(0, 10, 0, yOffset)
+delayLabel.BackgroundTransparency = 1
+delayLabel.Text = "Auto Delay (seconds):"
+delayLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+delayLabel.TextSize = 12
+delayLabel.Font = Enum.Font.GothamBold
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Parent = contentContainer
+yOffset = yOffset + 28
+
+local delayValue = Instance.new("TextLabel")
+delayValue.Size = UDim2.new(0, 40, 0, 25)
+delayValue.Position = UDim2.new(1, -50, 0, yOffset-25)
+delayValue.BackgroundTransparency = 1
+delayValue.Text = "4"
+delayValue.TextColor3 = Color3.fromRGB(255, 200, 100)
+delayValue.TextSize = 12
+delayValue.TextXAlignment = Enum.TextXAlignment.Right
+delayValue.Font = Enum.Font.GothamBold
+delayValue.Parent = contentContainer
+
+local delaySlider = Instance.new("Frame")
+delaySlider.Size = UDim2.new(1, -20, 0, 25)
+delaySlider.Position = UDim2.new(0, 10, 0, yOffset)
+delaySlider.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+delaySlider.BackgroundTransparency = 0.3
+delaySlider.Parent = contentContainer
+
+local delaySliderCorner = Instance.new("UICorner")
+delaySliderCorner.CornerRadius = UDim.new(0, 4)
+delaySliderCorner.Parent = delaySlider
+
+local delayFill = Instance.new("Frame")
+delayFill.Size = UDim2.new(0.3, 0, 1, 0)  -- 4/10 = 0.4, but default 4 sec
+delayFill.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
+delayFill.BackgroundTransparency = 0.2
+delayFill.Parent = delaySlider
+
+local delayButton = Instance.new("TextButton")
+delayButton.Size = UDim2.new(0, 18, 0, 25)
+delayButton.Position = UDim2.new(0.3, -9, 0, 0)  -- 3/10 = 0.3? Actually 4/10 = 0.4, we'll correct in update
+delayButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+delayButton.Text = ""
+delayButton.Parent = delaySlider
+delayButton.AutoButtonColor = false
+
+yOffset = yOffset + 32
+
 -- Manual Accept Button
 local acceptBtn = Instance.new("TextButton")
 acceptBtn.Size = UDim2.new(1, -20, 0, 40)
@@ -135,7 +207,7 @@ acceptBtn.Text = "Accept Quest Now"
 acceptBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 acceptBtn.TextSize = 15
 acceptBtn.Font = Enum.Font.GothamBold
-acceptBtn.Parent = mainFrame
+acceptBtn.Parent = contentContainer
 acceptBtn.BorderSizePixel = 0
 
 local acceptCorner = Instance.new("UICorner")
@@ -153,7 +225,7 @@ autoBtn.Text = "Auto Quest: OFF"
 autoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 autoBtn.TextSize = 15
 autoBtn.Font = Enum.Font.GothamBold
-autoBtn.Parent = mainFrame
+autoBtn.Parent = contentContainer
 autoBtn.BorderSizePixel = 0
 
 local autoCorner = Instance.new("UICorner")
@@ -170,7 +242,7 @@ statusLabel.Text = "Ready"
 statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 statusLabel.TextSize = 11
 statusLabel.TextWrapped = true
-statusLabel.Parent = mainFrame
+statusLabel.Parent = contentContainer
 
 -- ======================== SCRIPT LOGIC ========================
 
@@ -178,43 +250,70 @@ local questList = {}
 local selectedQuest = nil
 local autoActive = false
 local autoTask = nil
+local autoDelay = 4  -- seconds, default
 
--- Helper: get NPC position (model or part)
+-- Slider functions for delay
+local isSliding = false
+local function updateDelaySlider(input)
+    local width = delaySlider.AbsoluteSize.X
+    if width <= 0 then return end
+    local pos = input and (input.Position.X - delaySlider.AbsolutePosition.X) or (delayButton.AbsolutePosition.X - delaySlider.AbsolutePosition.X + 9)
+    local percent = math.clamp(pos / width, 0, 1)
+    autoDelay = math.floor(percent * 9) + 1  -- range 1 to 10 seconds
+    delayValue.Text = tostring(autoDelay)
+    delayButton.Position = UDim2.new(0, percent * (width - 18), 0, 0)
+    delayFill.Size = UDim2.new(percent, 0, 1, 0)
+end
+
+delaySlider.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSliding = true
+        updateDelaySlider(i)
+    end
+end)
+delaySlider.InputChanged:Connect(function(i)
+    if isSliding and i.UserInputType == Enum.UserInputType.MouseMovement then
+        updateDelaySlider(i)
+    end
+end)
+delayButton.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSliding = true
+    end
+end)
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSliding = false
+    end
+end)
+
+-- Helper: get NPC position
 local function getNPCForQuest(questName)
     local questFolder = workspace.Map_.NPC_.Quest:FindFirstChild(questName)
     if not questFolder then return nil end
-    -- Try to find a BasePart for teleport target
-    local npcPart = questFolder:FindFirstChild("HumanoidRootPart") or 
-                    questFolder:FindFirstChild("Head") or 
-                    questFolder:FindFirstChild("Torso")
+    local npcPart = questFolder:FindFirstChild("HumanoidRootPart") or questFolder:FindFirstChild("Head") or questFolder:FindFirstChild("Torso")
     if npcPart then return npcPart end
     return questFolder
 end
 
--- Accept Quest Function (teleport → press E → return)
+-- Accept Quest Function
 local function acceptQuest(questName)
     if not questName then
         statusLabel.Text = "No quest selected"
         return false
     end
-
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     if not rootPart then
         statusLabel.Text = "Character not loaded"
         return false
     end
-
     local npc = getNPCForQuest(questName)
     if not npc then
         statusLabel.Text = "NPC not found for " .. questName
         return false
     end
-
-    -- Save original position
     local originalCFrame = rootPart.CFrame
-
-    -- Teleport 5 studs in front of NPC
     local targetCFrame
     if npc:IsA("BasePart") then
         targetCFrame = npc.CFrame + Vector3.new(0, 0, 5)
@@ -222,11 +321,8 @@ local function acceptQuest(questName)
         targetCFrame = npc:GetPivot() + Vector3.new(0, 0, 5)
     end
     rootPart.CFrame = targetCFrame
-    wait(0.6)  -- Allow proximity prompt to appear
-
-    -- Simulate pressing 'E'
+    wait(0.6)
     local ePressed = false
-    -- Try VirtualInputManager first
     pcall(function()
         local VIM = game:GetService("VirtualInputManager")
         VIM:SendKeyEvent(true, "E", false, game)
@@ -234,20 +330,16 @@ local function acceptQuest(questName)
         VIM:SendKeyEvent(false, "E", false, game)
         ePressed = true
     end)
-    -- Fallback to keypress/keyrelease
     if not ePressed then
         pcall(function()
-            keypress(0x45)   -- 'E'
+            keypress(0x45)
             wait(0.05)
             keyrelease(0x45)
             ePressed = true
         end)
     end
-
-    wait(0.5)  -- Allow quest acceptance
-    -- Return to original position
+    wait(0.5)
     rootPart.CFrame = originalCFrame
-
     if ePressed then
         statusLabel.Text = "Accepted " .. questName
         print("Accepted:", questName)
@@ -259,32 +351,27 @@ local function acceptQuest(questName)
     end
 end
 
--- Scan all quests from workspace
+-- Scan all quests
 local function scanQuests()
     local questParent = workspace.Map_.NPC_.Quest
     if not questParent then
         statusLabel.Text = "Quest folder not found"
         return
     end
-
     questList = {}
     for _, child in pairs(questParent:GetChildren()) do
         if child.Name:match("^Quest%d+") then
             table.insert(questList, child.Name)
         end
     end
-    -- Sort numerically (Quest1, Quest2, ..., Quest13)
     table.sort(questList, function(a,b)
         local na = tonumber(a:match("%d+")) or 0
         local nb = tonumber(b:match("%d+")) or 0
         return na < nb
     end)
-
-    -- Clear old dropdown items
     for _, child in pairs(dropdownList:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
-
     local height = 0
     for _, qName in pairs(questList) do
         local btn = Instance.new("TextButton")
@@ -301,7 +388,6 @@ local function scanQuests()
         corner.CornerRadius = UDim.new(0, 3)
         corner.Parent = btn
         height = height + 32
-
         btn.MouseButton1Click:Connect(function()
             selectedQuest = qName
             dropdownBtn.Text = qName
@@ -310,23 +396,38 @@ local function scanQuests()
             statusLabel.Text = "Selected: " .. qName
         end)
     end
-
     dropdownList.CanvasSize = UDim2.new(0, 0, 0, height)
     statusLabel.Text = "Found " .. #questList .. " quests"
-    print("Scanned", #questList, "quests")
 end
 
--- Auto loop: simply repeat accept every 4 seconds
+-- Auto loop
 local function startAutoLoop()
     if autoTask then task.cancel(autoTask) end
     autoTask = task.spawn(function()
         while autoActive and selectedQuest do
             acceptQuest(selectedQuest)
-            wait(4)  -- wait 4 seconds before next attempt
+            wait(autoDelay)
         end
         autoTask = nil
     end)
 end
+
+-- Minimize logic
+local minimized = false
+local originalSize = mainFrame.Size
+local originalContentVisible = true
+minBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        contentContainer.Visible = false
+        mainFrame.Size = UDim2.new(0, 320, 0, 35)
+        minBtn.Text = "+"
+    else
+        contentContainer.Visible = true
+        mainFrame.Size = originalSize
+        minBtn.Text = "−"
+    end
+end)
 
 -- Button events
 local dropdownOpen = false
@@ -370,7 +471,7 @@ autoBtn.MouseButton1Click:Connect(function()
     if autoActive then
         autoBtn.Text = "Auto Quest: ON"
         autoBtn.BackgroundColor3 = Color3.fromRGB(80, 120, 80)
-        statusLabel.Text = "Auto ON for " .. selectedQuest
+        statusLabel.Text = "Auto ON for " .. selectedQuest .. " (delay " .. autoDelay .. "s)"
         startAutoLoop()
     else
         autoBtn.Text = "Auto Quest: OFF"
@@ -388,12 +489,10 @@ UserInputService.InputBegan:Connect(function(input)
         local btnSize = Vector2.new(dropdownBtn.AbsoluteSize.X, dropdownBtn.AbsoluteSize.Y)
         local containerPos = Vector2.new(dropdownContainer.AbsolutePosition.X, dropdownContainer.AbsolutePosition.Y)
         local containerSize = Vector2.new(dropdownContainer.AbsoluteSize.X, dropdownContainer.AbsoluteSize.Y)
-
         local hitBtn = mousePos.X >= btnPos.X and mousePos.X <= btnPos.X + btnSize.X and
                        mousePos.Y >= btnPos.Y and mousePos.Y <= btnPos.Y + btnSize.Y
         local hitContainer = mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
                              mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y
-
         if not hitBtn and not hitContainer then
             dropdownContainer.Visible = false
             dropdownOpen = false
@@ -403,4 +502,7 @@ end)
 
 -- Initial scan
 scanQuests()
-print("Quest Auto-Accept UI loaded. Select a quest, then use Manual or Auto.")
+-- Set initial delay slider position to 4 seconds (40%)
+task.wait(0.1)
+updateDelaySlider()  -- set visual position
+print("Quest Auto-Accept UI loaded. Minimize with '−', set delay slider, select a quest, and turn on Auto.")
